@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/theme/app_theme.dart';
-import 'features/dashboard/dashboard_screen.dart';
+import 'features/students/students_screen.dart';
 
 void main() {
   runApp(const SchoolFeeApp());
@@ -16,7 +16,7 @@ class SchoolFeeApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'School Fee Management',
       theme: AppTheme.lightTheme,
-      home: const DashboardScreen(),
+      home: const StudentsScreen(),
     );
   }
 }

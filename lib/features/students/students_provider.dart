@@ -33,6 +33,14 @@ class StudentsNotifier extends AsyncNotifier<List<Student>> {
     );
   }
 
+  Future<void> updateStudent(Student student) async {
+    await _repository.updateStudent(student);
+
+    state = await AsyncValue.guard(
+      () => _repository.getStudents(),
+    );
+  }
+
   Future<void> deleteStudent(int id) async {
     await _repository.deleteStudent(id);
 

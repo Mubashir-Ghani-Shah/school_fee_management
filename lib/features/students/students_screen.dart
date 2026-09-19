@@ -1,3 +1,4 @@
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/models/student.dart';
+import 'student_details_screen.dart';
 import 'student_list_item.dart';
 import 'students_provider.dart';
 
@@ -196,9 +198,19 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
                     itemBuilder: (context, index) {
                       final student = students[index];
 
-                      return StudentListItem(
-                        student: student,
-                      );
+                     return StudentListItem(
+  student: student,
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StudentDetailsScreen(
+          student: student,
+        ),
+      ),
+    );
+  },
+);
                     },
                   );
                 },

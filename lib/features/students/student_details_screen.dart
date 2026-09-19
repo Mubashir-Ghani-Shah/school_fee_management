@@ -30,40 +30,31 @@ class StudentDetailsScreen extends ConsumerWidget {
           children: [
             _buildProfileCard(),
 
-            const SizedBox(
-              height: AppSpacing.lg,
-            ),
+            const SizedBox(height: AppSpacing.lg),
 
             const Text(
               'Fee Information',
               style: AppTypography.sectionTitle,
             ),
 
-            const SizedBox(
-              height: AppSpacing.md,
-            ),
+            const SizedBox(height: AppSpacing.md),
 
             _buildFeeCard(),
 
-            const SizedBox(
-              height: AppSpacing.lg,
-            ),
+            const SizedBox(height: AppSpacing.lg),
 
             const Text(
               'Payment History',
               style: AppTypography.sectionTitle,
             ),
 
-            const SizedBox(
-              height: AppSpacing.md,
-            ),
+            const SizedBox(height: AppSpacing.md),
 
             _buildEmptyPaymentHistory(),
 
-            const SizedBox(
-              height: AppSpacing.lg,
-            ),
+            const SizedBox(height: AppSpacing.lg),
 
+            // Edit and Payment buttons
             Row(
               children: [
                 Expanded(
@@ -95,14 +86,18 @@ class StudentDetailsScreen extends ConsumerWidget {
               ],
             ),
 
-            const SizedBox(
-              height: AppSpacing.md,
-            ),
+            const SizedBox(height: AppSpacing.md),
 
+            // Delete button
             SizedBox(
               width: double.infinity,
               child: TextButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  _showDeleteConfirmation(
+                    context,
+                    ref,
+                  );
+                },
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.unpaid,
                 ),
@@ -117,6 +112,10 @@ class StudentDetailsScreen extends ConsumerWidget {
       ),
     );
   }
+
+  // ------------------------------------------------------------
+  // Profile Card
+  // ------------------------------------------------------------
 
   Widget _buildProfileCard() {
     return Card(
@@ -139,11 +138,9 @@ class StudentDetailsScreen extends ConsumerWidget {
                 ),
               ),
             ),
-
             const SizedBox(
               width: AppSpacing.md,
             ),
-
             Expanded(
               child: Column(
                 crossAxisAlignment:
@@ -176,6 +173,10 @@ class StudentDetailsScreen extends ConsumerWidget {
     );
   }
 
+  // ------------------------------------------------------------
+  // Fee Card
+  // ------------------------------------------------------------
+
   Widget _buildFeeCard() {
     return Card(
       child: Padding(
@@ -188,11 +189,9 @@ class StudentDetailsScreen extends ConsumerWidget {
               'Monthly Fee',
               'Rs. ${student.monthlyFee}',
             ),
-
             const Divider(
               height: AppSpacing.lg,
             ),
-
             _buildFeeRow(
               'Advance Balance',
               'Rs. ${student.advanceBalance}',
@@ -226,6 +225,10 @@ class StudentDetailsScreen extends ConsumerWidget {
       ],
     );
   }
+
+  // ------------------------------------------------------------
+  // Payment History
+  // ------------------------------------------------------------
 
   Widget _buildEmptyPaymentHistory() {
     return Card(
@@ -262,6 +265,10 @@ class StudentDetailsScreen extends ConsumerWidget {
       ),
     );
   }
+
+  // ------------------------------------------------------------
+  // Edit Student
+  // ------------------------------------------------------------
 
   void _showEditStudentDialog(
     BuildContext context,
@@ -328,7 +335,8 @@ class StudentDetailsScreen extends ConsumerWidget {
 
                     TextField(
                       controller: feeController,
-                      keyboardType: TextInputType.number,
+                      keyboardType:
+                          TextInputType.number,
                       decoration: const InputDecoration(
                         labelText: 'Monthly Fee',
                         prefixIcon: Icon(
@@ -344,7 +352,8 @@ class StudentDetailsScreen extends ConsumerWidget {
 
                     DropdownButtonFormField<String>(
                       initialValue: category,
-                      decoration: const InputDecoration(
+                      decoration:
+                          const InputDecoration(
                         labelText: 'Category',
                         prefixIcon: Icon(
                           Icons.category_outlined,
@@ -416,6 +425,7 @@ class StudentDetailsScreen extends ConsumerWidget {
                       return;
                     }
 
+                    // Fee 0 is allowed.
                     if (fee == null || fee < 0) {
                       _showError(
                         dialogContext,
@@ -484,8 +494,6 @@ class StudentDetailsScreen extends ConsumerWidget {
                       ),
                     );
 
-                    // Refresh the details screen with
-                    // the updated student data.
                     Navigator.pop(context);
                   },
                   child: const Text('Save Changes'),
@@ -498,6 +506,106 @@ class StudentDetailsScreen extends ConsumerWidget {
     );
   }
 
+  // ------------------------------------------------------------
+  // Delete Student
+  // ------------------------------------------------------------
+
+  void _showDeleteConfirmation(
+    BuildContext context,
+    WidgetRef ref,
+  ) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete Student?'),
+
+          content: Text(
+            'Are you sure you want to delete '
+            '${student.name}?\n\n'
+            'This action cannot be undone.',
+          ),
+
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Cancel'),
+            ),
+
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.unpaid,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                if (student.id == null) {
+                  return;
+                }
+
+                try {
+                  await ref
+                      .read(
+                        studentsProvider.notifier,
+                      )
+                      .deleteStudent(
+                        student.id!,
+                      );
+
+                  if (!dialogContext.mounted) {
+                    return;
+                  }
+
+                  Navigator.pop(dialogContext);
+
+                  if (!context.mounted) {
+                    return;
+                  }
+
+                  Navigator.pop(context);
+
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '${student.name} deleted successfully.',
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  if (!dialogContext.mounted) {
+                    return;
+                  }
+
+                  Navigator.pop(dialogContext);
+
+                  if (!context.mounted) {
+                    return;
+                  }
+
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Could not delete student: $e',
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ------------------------------------------------------------
+  // Error Message
+  // ------------------------------------------------------------
+
   void _showError(
     BuildContext context,
     String message,
@@ -508,6 +616,10 @@ class StudentDetailsScreen extends ConsumerWidget {
       ),
     );
   }
+
+  // ------------------------------------------------------------
+  // Student Initial
+  // ------------------------------------------------------------
 
   String _firstLetter(String name) {
     final trimmedName = name.trim();

@@ -1,4 +1,3 @@
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/student.dart';
@@ -39,6 +38,19 @@ class StudentsNotifier extends AsyncNotifier<List<Student>> {
 
     state = await AsyncValue.guard(
       () => _repository.getStudents(),
+    );
+  }
+
+  Future<void> searchStudents(String query) async {
+    final searchQuery = query.trim();
+
+    if (searchQuery.isEmpty) {
+      await refreshStudents();
+      return;
+    }
+
+    state = await AsyncValue.guard(
+      () => _repository.searchStudents(searchQuery),
     );
   }
 }

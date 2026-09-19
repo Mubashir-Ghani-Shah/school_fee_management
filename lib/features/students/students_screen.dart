@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,6 +18,48 @@ class StudentsScreen extends ConsumerStatefulWidget {
 }
 
 class _StudentsScreenState extends ConsumerState<StudentsScreen> {
+  final TextEditingController _searchController =
+      TextEditingController();
+
+  Timer? _searchDebounce;
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // Search with 300ms debounce.
+  void _onSearchChanged(String query) {
+    // Rebuild so the clear button appears/disappears.
+    setState(() {});
+
+    _searchDebounce?.cancel();
+
+    _searchDebounce = Timer(
+      const Duration(milliseconds: 300),
+      () {
+        ref
+            .read(studentsProvider.notifier)
+            .searchStudents(query);
+      },
+    );
+  }
+
+  // Clear search and show all students again.
+  void _clearSearch() {
+    _searchDebounce?.cancel();
+
+    _searchController.clear();
+
+    setState(() {});
+
+    ref
+        .read(studentsProvider.notifier)
+        .searchStudents('');
+  }
+
   @override
   Widget build(BuildContext context) {
     final studentsState = ref.watch(studentsProvider);
@@ -42,18 +86,25 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
       ),
 
       body: Padding(
-        padding: const EdgeInsets.all(AppSpacing.screenPadding),
+        padding: const EdgeInsets.all(
+          AppSpacing.screenPadding,
+        ),
         child: Column(
           children: [
             // Search box
             TextField(
+              controller: _searchController,
+              onChanged: _onSearchChanged,
               decoration: InputDecoration(
                 hintText: 'Search by name or class',
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.clear),
-                ),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        onPressed: _clearSearch,
+                        icon: const Icon(Icons.clear),
+                        tooltip: 'Clear search',
+                      )
+                    : null,
               ),
             ),
 
@@ -94,6 +145,7 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
                     child: CircularProgressIndicator(),
                   );
                 },
+
                 error: (error, stackTrace) {
                   return Center(
                     child: Column(
@@ -126,6 +178,7 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
                     ),
                   );
                 },
+
                 data: (students) {
                   if (students.isEmpty) {
                     return const Center(
@@ -180,7 +233,8 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
                     // Student name
                     TextField(
                       controller: nameController,
-                      textCapitalization: TextCapitalization.words,
+                      textCapitalization:
+                          TextCapitalization.words,
                       decoration: const InputDecoration(
                         labelText: 'Student Name',
                         hintText: 'Enter student name',
@@ -279,7 +333,8 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
                 // Save
                 ElevatedButton(
                   onPressed: () async {
-                    final name = nameController.text.trim();
+                    final name =
+                        nameController.text.trim();
 
                     final studentClass =
                         classController.text.trim();
@@ -306,8 +361,8 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
                       return;
                     }
 
-                    // Validate fee
-                    // 0 is allowed
+                    // Validate fee.
+                    // 0 is allowed.
                     if (fee == null || fee < 0) {
                       _showDialogError(
                         dialogContext,
@@ -334,7 +389,8 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
 
                       if (!mounted) return;
 
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(
                         SnackBar(
                           content: Text(
                             'Could not save student: $e',
@@ -351,7 +407,8 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
 
                     if (!mounted) return;
 
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(
                       SnackBar(
                         content: Text(
                           '$name added successfully.',
@@ -399,14 +456,14 @@ class _EmptyStudents extends StatelessWidget {
           height: AppSpacing.md,
         ),
         const Text(
-          'No students yet',
+          'No students found',
           style: AppTypography.sectionTitle,
         ),
         const SizedBox(
           height: AppSpacing.sm,
         ),
         const Text(
-          'Add your first student to get started.',
+          'Try another name or class.',
           style: AppTypography.small,
           textAlign: TextAlign.center,
         ),
